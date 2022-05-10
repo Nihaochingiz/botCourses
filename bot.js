@@ -6,7 +6,7 @@ const Session = require('node-vk-bot-api/lib/session');
 const Stage = require('node-vk-bot-api/lib/stage');
 const bot = new VkBot(token);
 const keyWords = ["раз","два","три"];
-
+const axios = require('C:/доки/чат_боты_работа/node_modules/axios');
 let step = 0;
 
 const hello = "Хотите получить бесплатный чек лист 7 вопросов себе для создания капитала или узнать подробнее о курсе Финансовый тетрис Кликните на подходящую кнопку ниже:"
@@ -151,11 +151,11 @@ function greeting(){
     
 
  if (/^((8|\+7)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$/.test(ctx.message.text) === false) {
-      ctx.reply('Напишите номер в формате 8XXXXXXXXXX')
+      ctx.reply('Напишите номер в формате 8(XXX)-XXX-XX-XX')
       ctx.session.userPhone = +ctx.message.text;
   }
   
-  if (/^((8|\+7)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$/.test(ctx.message.text) === true) {
+  else if (/^((8|\+7)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$/.test(ctx.message.text) === true) {
     ctx.session.userPhone = +ctx.message.text;
     ctx.scene.next();
     ctx.reply('Как вас зовут?');
@@ -167,7 +167,68 @@ function greeting(){
     ctx.scene.leave();
     ctx.reply(`Здравствуйте, ваше имя ${ctx.session.userName} и ваш номер ${ctx.session.userPhone}`);
     console.log([ctx.session.userName,ctx.session.userPhone])
+      
+  const {google} = require('googleapis');
+  const keys = require('./keys.json');
+  
+  
+  
+  const client = new google.auth.JWT(
+    keys.client_email,
+    null,
+    keys.private_key,
+    ['https://www.googleapis.com/auth/spreadsheets']
+  );
+  
+  client.authorize(function(err,tokens) {
+  
+      if(err) {
+        console.log(err);
+        return;
+      } else {
+        console.log('Connected!');
+        gsrun(client) 
+      }
+  
+  });
+  
+  async function gsrun(cl) {
+  
+    const gsapi = google.sheets({version: 'v4', auth: cl});
+  
+  
+    const opt = {
+        spreadsheetId: '1XGtu4pbTz75uhgivzU5Udne6Nnm5RcnHKy0TxU8JbeI',
+        range: 'Data!B10'
+    };
+    
+    
+  const newDataArray = {values: ctx.session.userName}
+  const anotherDataArray = {
+    values:ctx.session.userPhone
+  }
+   let data = await gsapi.spreadsheets.values.get(opt);
+   console.log(data.data.values);
+  
+   const updateOptions = {
+    spreadsheetId: '1XGtu4pbTz75uhgivzU5Udne6Nnm5RcnHKy0TxU8JbeI',
+    range: 'Data!A2:B2',
+    valueInputOption: 'USER_ENTERED',
+    resource: { values: newDataArray,
+    values:anotherDataArray}
+   
+    
+  };
+  
+  let res  = await gsapi.spreadsheets.values.update(updateOptions);
+  
+  console.log(res)
+  }
+  
+  
+
   },
+  
 );
 const session = new Session();
 const stage = new Stage(scene);
@@ -178,10 +239,9 @@ bot.use(stage.middleware());
 bot.command([  /*"принимаю  решения",  
 "завишу от чужого мнения", 
  "не говорю нет,  внутренний негатив", 
- "пугают перемены"*/ '/meet', ], (ctx) => {
+ "пугают перемены","Узнать о курсе"*/ '/meet', ], (ctx) => {
   ctx.scene.enter('meet');
 });
-
 
   greeting();
 
@@ -207,97 +267,3 @@ bot.command([  /*"принимаю  решения",
 
 
 
-/*
-const keyWords = ["раз","два","три"]
-let step = 0;
-
-function hello() {
-bot.command('два', (ctx) => {
-
-  userId = ctx.message.from_id || ctx.message.user_id;
-
- 
-  console.log(userId)
-
-ctx.reply('helloWorld' , null, Markup
- .keyboard([
-   'Поехали',
-   'Узнать о курсе',
- ])
-);
-
-})
-}
-bot.on((ctx) => {
-if(step === 0 && ctx.message.text === "Поехали"){
- ctx.reply("В жопу дашь аль мать продашь", null, Markup
-    .keyboard([
-      'Да',
-    'Нет'
-    ])
-    .inline(),);
-  step++;
-} else if(step === 1 && ctx.message.text === "Да"){
-
-    ctx.reply('Хуй');
-  }else if(step === 1 && ctx.message.text === "Нет"){
-    ctx.reply('Жопа');
-  }
-});
-
-
-
-
-bot.startPolling((err) => {
-  if (err) {
-    console.error(err);
-  }
-});
-
-*/
-
-
-
-
-
-
-
-/*
-const scene = new Scene('meet',
-  (ctx) => {
-    ctx.scene.next();
-    ctx.reply('Какой у вас номер?');
-  },
-  (ctx) => {
-    ctx.session.phoneNumber = +ctx.message.text;
-    console.log(ctx.session.phoneNumber)
-    if (/^((8|\+7)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$/.test(ctx.message.text) === true) {
-        ctx.session.phoneNumber = +ctx.message.text;
-    }
-     if (/^((8|\+7)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$/.test(ctx.message.text) === false) {
-        ctx.reply('Напишите правильный номер')
-        ctx.session.phoneNumber = +ctx.message.text;
-    }
-    ctx.scene.next();
-    ctx.reply('Как вас зовут?');
-  },
-  (ctx) => {
-    ctx.session.name = ctx.message.text;
-
-    ctx.scene.leave();
-    ctx.reply(`Ваше имя ${ctx.session.name}, ваш номер ${ctx.session.phoneNumber} `);
-  },
-);
-const session = new Session();
-const stage = new Stage(scene);
-
-bot.use(session.middleware());
-bot.use(stage.middleware());
-
-bot.command('/meet', (ctx) => {
-  ctx.scene.enter('meet');
-});
-
-bot.startPolling();
-
-*/
