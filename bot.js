@@ -1,5 +1,5 @@
 const VkBot = require('node-vk-bot-api');
-const token = "81a9c491096977dd53d192c2315133e99f13cc471e2a0cb445ec999b6e4ab191a16733aba3947b40c6d9a"
+const token = "token"
 const Markup = require('node-vk-bot-api/lib/markup');
 const Scene = require('node-vk-bot-api/lib/scene');
 const Session = require('node-vk-bot-api/lib/session');
